@@ -1,6 +1,6 @@
 ---
 title: "STAT 331 Portfolio"
-author: "Your name goes here"
+author: "Ashkan Taghavi"
 format: 
   html: 
     self-contained: true
