@@ -1,0 +1,57 @@
+---
+title: "Challenge 2"
+author: "Ashkan Taghavi"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    code-fold: true
+    code-summary: "Show code"
+    theme: readable
+editor: visual
+execute: 
+  echo: true
+  error: false
+---
+
+## Set-Up
+
+```{r setup}
+#| execute:
+#| output: FALSE
+library(tidyverse)
+library(here)
+library(randomcoloR)
+
+```
+
+### **Load and Store Dataset**
+
+```{r data}
+#| execute:
+#| output: FALSE
+surveys <- read_csv(here("Week 2", "Lab2", "surveys.csv"))
+
+```
+
+### **Challenge Question: Spicy** 
+
+```{r}
+# Code for Spicy Challenge Question!
+
+# Create a vector of 8 colors
+colors <- c("red", "green", "blue",  "purple", "darkorange", "magenta", "turquoise", 
+                 "darkgreen")
+
+# Create box plot with specified colors
+ggplot(data = surveys, aes(x = weight, y = species, color = genus)) +
+  geom_boxplot() +
+  scale_color_manual(values = colors) +
+  labs(title = "Distribution of Weights for Different Species",
+       y = "Species", 
+       x = "Weight (grams)", 
+       color = "Genus of Rodent") + 
+  scale_x_log10()
+
+
+```

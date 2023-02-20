@@ -1,0 +1,294 @@
+# 
+
+---
+title: "LAB 3"
+author: "Ashkan Taghavi"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    code-fold: true
+    code-summary: "Show code"
+    theme: readable
+editor: visual
+execute: 
+  echo: true
+  error: false
+---
+
+# Data Set
+
+**1. Loading Packages**
+
+```{r packages}
+#| output: false
+library(tidyverse)
+library(here)
+
+```
+
+## Summary
+
+**2. Summary & Provide a brief overview (2-4 sentences) of the data set.**
+
+```{r dataset-explore}
+#| output: false
+hipHopData <- read_csv(here("Week 3", "Lab 3", "hiphop.csv"))
+
+
+```
+
+This study takes a deeper look at African-American English (AAE) by asking students from the University of Minnesota familiarity of different vocabulary words. All the data seems to be in either characters, or numbers. There also seems to be some people in the study where key columns are not recorded for, like city being 0. There is overall 10,752 rows and 38 variables in total.
+
+**3. Rows of this data set**
+
+```{r rows}
+#| output: false
+summary(hipHopData)
+hipHopData |>
+  count(word, subj) |>
+  nrow()
+
+```
+
+There are 10,752 rows in this data set. This is because there are 168 people and 64 words. Therefore for each word, 168 people (or rows) will be answering it.
+
+## Cleaning the Data
+
+**4. Missing values for some of the variables were replaced with other values. How were missing values replaced? What do you believe are some benefits and drawbacks of doing this?**
+
+```{r missing}
+hipHopData |>
+  filter(city == 0, county == 0)
+```
+
+It seems that some of the variables were replaced with 0 instead of NA values, such as some subjects data in city and county. This could be seen as beneficial because they would still represent specific points in the data set, without potentially needing to remove them. A drawback, however, is that when using summary statistics, the points would still be accounted for, which instead might drop down the mean/median without meaning to do so.
+
+### Reflection 
+
+Originally, I answered this question saying that the dataset used zero's to replace missing values. However, upon further review, there were more ways that missing values were replaced within this dataset. Another way missing values were replaced was with the mean values. Looking at the documentation of the dataset, it stated that with the \_\_Move variables, contained missing values that were replaced with mean values in these variables. Also blackWeekly, which was the number of strong and weak tie to African-Americans also had missing values that were replaced with mean values. This can be beneficial as it allows you to still have representation of these points to when doing analysis, however one drawback is that lead to innacurate information being represented within the dataset.
+
+**5. Clean the data set**
+
+```{r}
+# code chunk for Q5
+hiphop_clean <- hipHopData |> 
+  mutate(across(c(sex, ethnic, jayz1, fam1, boondocks1), .fns = as.factor
+                )) |>
+  filter(city != 0,
+         county != 0,
+         countyBlack != 0
+         )
+```
+
+# Data Summaries
+
+**6. How many unique AAE words were studied in this data set?**
+
+```{r}
+# code chunk for Q6
+hipHopData |>
+  distinct(word) |>
+  nrow()
+
+```
+
+There are 64 unique AAE words that were studied in this data set.
+
+**7. Make a new variable that re-categorizes `ethnic` into only two groups, "white" and "non-white", to simplify your data.**
+
+```{r}
+# code chunk for Q7
+hiphop_clean <- hiphop_clean |>
+  mutate(ethnic1 = if_else(ethnic == 'white', 'white', 'non-white'),
+         ethnic1 = as.factor(ethnic1)
+  )
+
+```
+
+**8. It is fairly common for researchers to collapse ethnic or racial categories similar to what you just did. What are some issues with representing the data in this way?**
+
+###Reflection I originally did not answer this question. This is my mistake, as I may have accidentally skipped over it by not paying full attention. To avoid this mistake again, I plan to do a more focused review of labs before submitting.
+
+Here is my answer to this question:
+
+Collapsing ethnic or racial categories into larger groups can lead to a loss of information and mask important differences among subgroups within those categories. This can cause many issues, however here are two issues I believe are important to note:
+
+Bias: The decision to collapse categories may be influenced by implicit biases or cultural assumptions that do not accurately reflect the diversity within the larger group.
+
+Inaccurate conclusions: Collapsing categories can lead to inaccurate conclusions about the experiences of certain groups. For example, if you collapse all Asian Americans into a single category, you may miss important differences between subgroups such as Chinese Americans and Vietnamese Americans.
+
+**9. What are the demographics of the people in this study? Investigate the variables `sex`, `age`, and `ethnic` and summarize your findings in 1-3 complete sentences.**
+
+```{r}
+# code chunk for Q9
+hiphop_clean |> 
+  distinct(subj, age, ethnic, sex) |>
+  summary()
+```
+
+In this data set, there seems to be an age range between 16 and 48 with the median being 19. For ethnicity, there seems to be a majority white with 133 students, followed by asian with 14 students. For sex, the class seems to be predominately female with 109 students, followed by male with 50 students.
+
+**10. Two plots that display the demographic information of the subjects in this study.**
+
+```{r}
+# code chunk for Q10
+library(ggridges)
+hiphop_clean |> 
+  ggplot(data = hiphop_clean, 
+       mapping = aes(x = age,
+                     y = ethnic,
+                     )) + 
+  geom_boxplot(alpha = 0.1) +
+  labs(x = "Age", y = "Ethnicity")
+
+
+
+hiphop_clean |> 
+  ggplot(mapping = aes(x = age,
+                                   y = ethnic,
+                                   )) +
+  geom_density_ridges(panel_scaling = FALSE)  +
+                    labs(x = "Age",
+                         y = "Ethnicity")
+
+# Revised Code:
+hiphop_clean |> 
+  ggplot(data = hiphop_clean, 
+       mapping = aes(x = age,
+                     y = sex,
+                     )) + 
+  geom_boxplot(alpha = 0.1) +
+  labs(x = "Age", y = "Ethnicity")
+
+
+
+
+```
+
+### Reflection
+
+Initially, I made two different types of graphs that showed showed/contaiend the same demographic information. After reading your comments, I realized that I needed to make a second graph that showed a new/different descriptive demographic of the data set that could provide more useful information. I then added a new box plot that showed information on the ages of the subjects between males and females, which I believe is useful it gives further context of between sample of males and females. We know that dataset subject are made up of students, but this box plots shows (not taking into account the outliars) that the age of males and females in the data set are very similar and comparable.
+
+## Familiar words
+
+For each demographic group listed below, determine which word(s) in this study was (were) the most **and** least familiar on average.
+
+**11. People below the age of 20.**
+
+```{r}
+# code chunk for Q11
+hiphop_clean |>
+  filter(age < 20) |>
+  group_by(word) |>
+  summarize(fammean = mean(familiarity)) |>
+  slice_max(fammean)
+
+```
+
+Max: **off the hook**
+
+```{r}
+hiphop_clean |>
+  filter(age < 20) |>
+  group_by(word) |>
+  summarize(fammean = mean(familiarity)) |>
+  slice_min(fammean)
+
+```
+
+Min: **domino**
+
+**12. Non-white women.**
+
+```{r}
+# code chunk for Q12
+hiphop_clean |>
+  filter(sex == 'Female' &
+           ethnic1 == 'non-white') |>
+  group_by(word) |>
+  summarize(fammean = mean(familiarity)) |>
+  slice_max(fammean)
+
+```
+
+Max: feel me
+
+```{r}
+hiphop_clean |>
+  filter(sex == 'Female' &
+       ethnic1 == 'non-white') |>
+  group_by(word) |>
+  summarize(fammean = mean(familiarity)) |>
+  slice_min(fammean)
+```
+
+Min: **break someone out, domino, dukey rope, plex, rollie**
+
+**13. White men above the age of 30.**
+
+```{r}
+# code chunk for Q13
+hiphop_clean |>
+  filter(sex == 'Male' &
+       ethnic1 == 'white' & 
+       age > 30) |>
+  group_by(word) |>
+  summarize(fammean = mean(familiarity)) |>
+  slice_max(fammean)
+
+```
+
+Max: **5-0**
+
+```{r}
+hiphop_clean |>
+  filter(sex == 'Male' &
+       ethnic1 == 'white' & 
+       age > 30) |>
+  group_by(word) |>
+  summarize(fammean = mean(familiarity)) |>
+  slice_min(fammean)
+```
+
+Min: **ay yo trip, beezy, break someone out, catch the vapors, crossroads, crump, dap, dollar cab, domino, duckets**
+
+## Study Subjects
+
+**14. Determine which subject you believe is secretly Bieber, justify your answer.**
+
+```{r}
+# code chunk for Q14
+# Revised code
+hiphop_clean |>
+  filter(sex == 'Male',
+       ethnic == 'white',
+       age >= 17,
+       age <= 23,
+       city >= 10000,
+       city <= 60000) |>
+  slice_max(bieber) |>
+  group_by(subj) |>
+  summarize() 
+
+# Previous code before revision
+# hiphop_clean |>
+#   filter(sex == 'Male',
+#        ethnic == 'white',
+#        age >= 17,
+#        age <= 23,
+#        city >= 10000,
+#        city <= 60000,
+#        bieber >= 5) |>
+#   group_by(subj) |>
+#   summarize() 
+
+
+
+```
+
+I would think that Justin Bieber would be person 17. Adjusting for the factors above, and using the bieber variable to get the most Bieber listener, the person who stood out was p17. However, it is odd he did not know all his songs (with a score 6).
+
+### Reflection
+
+To find bieber, I was trying to find the subject with the highest score. Originally I used the code 'bieber \>= 5' in my filter function, which although provided me with the correct answer, was not the best way to solve this. After further, reflection I realized why using the slice_max function is a much better option. Slice_max allows you to extract a slice of the data based on some criterion, and then find the maximum value within that slice. This is more efficient because we can specify the subject as the variable we want to slice and then quickly find the maximum value out of the subjects. With my original code, we would have to keep going incrementally down (starting at 6) until we come across the highest score. Slice_Max negates those steps, thus making it more efficient and a stronger way to solve this problem.

@@ -1,0 +1,258 @@
+---
+title: "LAB 4"
+author: "Ashkan Taghavi"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    code-fold: true
+    code-summary: "Show code"
+    theme: readable
+editor: visual
+execute: 
+  echo: true
+  error: false
+---
+
+**Loading Packages**
+
+```{r packages}
+#| message: false
+library(tidyverse)
+library(here)
+
+```
+
+**Data Set**
+### Question 1:
+```{r import dataset}
+#| message: false
+avocado_data <- read_csv(here("Week 4", "Lab 4", "avocado.csv"))
+
+
+```
+
+The data set contains weekly retail information for the national volume (units) and price of Hass avocados in 2018. The data was downloaded from the Hass Avocado Board's website in May 2018 and compiled into a single CSV file. The data comes from retailers' cash registers and includes sales from various channels (grocery, mass, club, drug, dollar, and military). The average price listed is per avocado and only Hass avocados are included, other varieties are excluded. The data set contains several columns, including "Date" (the date of the observation), "AveragePrice" (the average price of a single avocado), "Type" (conventional or organic), "Year" (the year), "Region" (the city or region of the observation), "Total Volume" (the total number of avocados sold), and "4046," "4225," and "4770" (the total number of avocados with Product Lookup Codes (PLU) 4046, 4225, and 4770 sold, respectively).
+
+
+**Cleaning Dataset**
+### Question 2:
+```{r}
+distinct(avocado_data, region)
+
+Total <- c('TotalUS')
+Total <- as.data.frame(Total)
+
+
+Region <- c("West", "Midsouth", "Northeast", "NorthernNewEngland", "SouthCentral", "Southeast", "Plains", "GreatLakes", "")
+Region <- as.data.frame(Region)
+
+
+State <- c("California", "SouthCarolina")
+State <- as.data.frame(State)
+
+
+avo_clean_cities <- avocado_data |>
+  anti_join(State, by = c("region" = "State")) |>
+  anti_join(Region, by = c("region" = "Region")) |>
+  anti_join(Total, by = c("region" = "Total")) |>
+  mutate(region = as.factor(region)) |>
+  rename(SmallHass = `4046`, LargeHass = `4225`, ExtraLargeHass = `4770`, TotalVolume = "Total Volume")
+
+avo_clean_regions <- avocado_data |>
+  inner_join(Region, by = c("region" = "Region")) |>
+  mutate(region = as.factor(region)) |>
+  rename(SmallHass = `4046`, LargeHass = `4225`, ExtraLargeHass = `4770`, TotalVolume = "Total Volume")
+
+```
+
+**Summarizing Avocado Sales**
+
+### Question 3:
+```{r}
+small_avo_regions <- avo_clean_regions |>
+  filter(year == 2017 & type == "organic") |>
+  group_by(region) |>
+  summarize(SmallHass_org = sum(SmallHass)) |>
+  arrange(desc(SmallHass_org))
+  
+small_avo_regions
+
+
+
+```
+The major region with the most sold, organic, and small Hass avocados in 2017, was the West with 1,870,206.29 avocados.
+
+
+## Question 4:
+```{r}
+avo_data_split <- avo_clean_cities |>
+  separate(Date, into = c("Year", "Month", "Day"), sep = "-") |>
+  group_by(Month) |>
+  summarize(Total_Volume = sum(TotalVolume)) |>
+  arrange(desc(Total_Volume))
+
+avo_data_split
+
+
+```
+February has the highest volume of total avocado sales, with 486,602,255 avocados.
+
+### Question 5:
+```{r}
+avo_sales_by_region <- avo_clean_cities |>
+  group_by(region) |>
+  summarize(Total_Volume = sum(TotalVolume)) |>
+  arrange(desc(Total_Volume))
+
+top_5_regions <- head(avo_sales_by_region, 5) |>
+  select(region)
+
+ggplot(avo_clean_cities |>
+         semi_join(top_5_regions, by = "region"), aes(x = region, y = TotalVolume)) +
+  geom_boxplot() +
+  ggtitle("Total Volume of Avocado Sales by Region") +
+  xlab("Region") +
+  ylab("Total Volume")
+
+
+
+
+
+```
+
+**Reshaping**
+### Question 6:
+```{r}
+#| message: false
+
+california_regions <- c("LosAngeles", "SanDiego", "Sacramento", "SanFrancisco")
+avo_clean_cities_california <- avo_clean_cities |>
+  filter(region %in% california_regions)
+
+grouped_avocados_california <- avo_clean_cities_california |>
+  group_by(region, type)
+
+mean_price_california <- grouped_avocados_california |>
+  summarise(mean_price = mean(AveragePrice))
+avo_clean_cities_california_with_price <- avo_clean_cities_california |>
+  left_join(mean_price_california, by = c("region", "type"))
+
+organic_vs_conventional <- mean_price_california |>
+  filter(type == "organic" | type == "conventional")
+
+ggplot(organic_vs_conventional, aes(x = region, y = mean_price, fill = type)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Price of Organic vs Conventional Avocados by region in California",
+    x = "Region (4 California Cities)",
+    y = "Price (in dollars)"
+    )
+
+
+mean_price_california
+
+```
+Citation for how to use geom_col(position = "dodge"), https://ggplot2.tidyverse.org/reference/position_dodge.html
+
+Out these four California cities, San Francisco has the largest difference in price of avocados between conventional and organic types. 
+In San Francisco the mean price for organic avocados is \$2.21, while conventional avocados are \$1.40. There is about a difference of about /$0.81 between the two types (with organic type being more expensive).
+
+### Question 7:
+```{r}
+# # Subset only California regions
+# california_regions <- c("LosAngeles", "SanDiego", "Sacramento", "SanFrancisco")
+# avo_clean_cities_california <- avo_clean_cities |>
+#   filter(region %in% california_regions)
+# 
+# # Group by region and type
+# grouped_avocados_california <- avo_clean_cities_california |>
+#   group_by(region, type)
+# 
+# # Calculate mean price by group
+# mean_price_california <- grouped_avocados_california |>
+#   summarise(mean_price = mean(AveragePrice))
+# 
+# # Join mean price to original data to get price by region and type
+# avo_clean_cities_california_with_price <- avo_clean_cities_california |>
+#   left_join(mean_price_california, by = c("region", "type"))
+# 
+# # Subset only organic and conventional avocados
+# avo_clean_cities_california_organic_vs_conventional <- avo_clean_cities_california_with_price |>
+#   filter(type == "organic" | type == "conventional" & SmallHass:ExtraLargeHass)
+# 
+# # Plot price difference by region
+# ggplot(avo_clean_cities_california_organic_vs_conventional, aes(x = region, y = mean_price, fill = type)) +
+#   geom_bar(stat = "identity") +
+#   scale_y_continuous(name = "Price (in dollars)") +
+#   scale_fill_manual(values = c("blue", "orange")) +
+#   ggtitle("Price difference of organic vs conventional avocados by region in California")
+# 
+
+
+
+```
+
+```{r}
+#| message: false
+# Subset only California regions
+california_regions <- c("LosAngeles", "SanDiego", "Sacramento", "SanFrancisco")
+avo_clean_cities_california <- avo_clean_cities %>%
+  filter(region %in% california_regions)
+
+# Group by region and type
+grouped_avocados_california <- avo_clean_cities_california %>%
+  group_by(region, type)
+
+# Calculate total volume by group
+total_volume_california <- grouped_avocados_california %>%
+  summarise(total_volume = sum(TotalVolume))
+
+# Join total volume to original data to get volume by region and type
+avo_clean_cities_california_with_volume <- avo_clean_cities_california %>%
+  left_join(total_volume_california, by = c("region", "type"))
+
+# Calculate proportion of SmallHass, LargeHass, and ExtraLargeHass
+avo_clean_cities_california_proportions <- avo_clean_cities_california_with_volume %>%
+  mutate(SmallHass_proportion = SmallHass / total_volume,
+         LargeHass_proportion = LargeHass / total_volume,
+         ExtraLargeHass_proportion = ExtraLargeHass / total_volume)
+
+# Subset only organic and conventional avocados
+avo_clean_cities_california_organic_vs_conventional <- avo_clean_cities_california_proportions %>%
+  filter(type == "organic" | type == "conventional")
+
+# Plot proportion of SmallHass and LargeHass
+ggplot(avo_clean_cities_california_organic_vs_conventional,
+       aes(x = region, y = SmallHass_proportion, fill = type)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(name = "Proportion of Sales") +
+  scale_fill_manual(values = c("blue", "orange")) +
+  ggtitle("Proportion of SmallHass sales for organic vs conventional avocados by region in California") +
+  facet_wrap(~ type, ncol = 2, scales = "free_y")
+
+# Plot proportion of ExtraLargeHass
+ggplot(avo_clean_cities_california_organic_vs_conventional,
+       aes(x = region, y = ExtraLargeHass_proportion, fill = type)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(name = "Proportion of Sales") +
+  scale_fill_manual(values = c("blue", "orange")) +
+  ggtitle("Proportion of ExtraLargeHass sales for organic vs conventional avocados by region in California") +
+  facet_wrap(~ type, ncol = 2, scales = "free_y")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

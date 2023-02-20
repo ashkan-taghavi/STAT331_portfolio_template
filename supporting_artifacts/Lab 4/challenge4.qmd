@@ -1,0 +1,98 @@
+---
+title: "Challenge 4"
+author: "Ashkan Taghavi"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    code-fold: true
+    code-summary: "Show code"
+    theme: readable
+editor: visual
+execute: 
+  echo: true
+  error: false
+  warning: false
+  message: false
+---
+
+### Declaring Packages
+
+```{r, setup}
+#| execute:
+#| output: FALSE
+library(tidyverse)
+library(here)
+```
+
+### Importing Data set
+
+```{r, import datset}
+#| execute:
+#| output: FALSE
+avocado <- read_csv(here("Week 4", "Lab 4", "avocado.csv"))
+```
+
+### Creating Specified Datasets
+```{r}
+major_region <- c('Northeast', 'Southeast', 'SouthCentral', 'Plains', 'West', 'Midsouth')
+major_state <- c('NewYork', 'California', 'SouthCarolina', 'WestTexNewMexico')
+california_cities <- c('LosAngeles', 'SanDiego', 'Sacramento', 'SanFrancisco')
+total_us <- c('TotalUS')
+major_region <- data.frame(major_region)
+major_state <- data.frame(major_state)
+california_cities <- data.frame(california_cities)
+avocado_california <- avocado |>
+  semi_join(california_cities, by = c('region' = 'california_cities'))
+```
+
+## Challenge:
+
+```{r}
+# Created custom Dataset with median house prices taken from Google, 2018 housing prices due to data in Avocados dataset ending that year. Link: https://www.redfin.com/city/11203/CA/Los-Angeles etc. (Specify link for each city). 
+
+City <- c('Sacramento', 'LosAngeles','SanFrancisco','SanDiego')
+Price <- c(330000, 705000, 1402000, 600000)
+
+HousePrice <- data.frame(City, Price)
+avocado_california <- avocado |>
+  semi_join(california_cities, by = c('region' = 'california_cities'))
+
+avocado_california |>
+  select(AveragePrice, `Total Volume`, type, region) |>
+  group_by(region, type) |>
+  summarize(med_avocado_price = median(AveragePrice)) |>
+  left_join(HousePrice, by = c("region" = "City")) |>
+  ggplot(mapping = aes(y = med_avocado_price, x = Price,
+                       color = type, shape = region)) +
+  geom_point() +
+  labs(title = "Relationship between House Prices and Avocados",
+       x = "Median Housing Price (by California City)", 
+       y = "Median Avocado Price ($)") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_color_discrete(name = "Avocado Type") +
+  scale_shape_manual(values = c(15, 16, 17, 4), name = "City")
+
+
+
+
+```
+
+Based on the plot of median housing price in the 4 California cities and Avocado prices, there seems to be a weak, positive correlation between housing prices and avocado prices. However, it is quite difficult to tell as there is not a lot of data supported from the housing prices in every city. This plot supports the joke that “Millennials can’t afford houses, because they spend all their money buying avocado toast,” as we see that in cities that have higher avocado prices, the median housing price is higher as well. Realistically, this relationship could also be associated with cost of living being higher in certain cities, and so items like Avocados would naturally be a higher price.
+
+
+#### Citations
+For: theme(plot.title = element_text(hjust = 0.5))
+To center plot title;
+https://stackoverflow.com/questions/40675778/center-plot-title-in-ggplot2
+
+For: scale_x_discrete(name = "Avocado Type"), 
+To rename legend;
+https://r-graphics.org/recipe-legend-label-text
+
+For: scale_fill_manual(values = c(15, 16, 17, 4), name = "City"), 
+To customize point shapes with respect to each city;
+https://r-graphics.org/recipe-scatter-shapes
+
+
+

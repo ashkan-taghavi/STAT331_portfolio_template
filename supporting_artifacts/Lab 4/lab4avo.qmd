@@ -1,0 +1,194 @@
+---
+title: "LAB 4"
+author: "Ashkan Taghavi"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    code-fold: true
+    code-summary: "Show code"
+    theme: readable
+editor: visual
+execute: 
+  echo: true
+  error: false
+---
+
+## Declaring Libraries
+
+```{r}
+#| execute:
+#| output: FALSE
+library(tidyverse)
+library(here)
+```
+
+## Importing Data Set
+
+```{r}
+#| execute:
+#| output: FALSE
+avocado <- read_csv(here("Week 4", "Lab 4", "avocado.csv"))
+
+```
+
+```{r}
+#| execute:
+#| output: false
+dim(avocado)
+str(avocado)
+```
+
+This data set seems to contain the total volume of three different price lookup's of avocados sold in different stores. In addition to this, the data, type (whether it is organic or conventional), the year, region, and average price is included. There seems to be character, dates, and non-integer data type values. Overall, there seems to be 18249 rows with 14 columns. 4046 represents Small Hass, 4225 represents Large Hass, 4770 represents extra large avocados.
+
+```{r}
+major_region <- c('Northeast', 'Southeast', 'SouthCentral', 'Plains', 'West', 'Midsouth', 'GreatLakes')
+major_state <- c('NewYork', 'California', 'SouthCarolina', 'WestTexNewMexico')
+california_cities <- c('LosAngeles', 'SanDiego', 'Sacramento', 'SanFrancisco')
+total_us <- c('TotalUS')
+major_region <- data.frame(major_region)
+major_state <- data.frame(major_state)
+california_cities <- data.frame(california_cities)
+total_us <- data.frame(total_us)
+avocado_major_region <- avocado |> 
+  semi_join(major_region, by = c('region' = 'major_region'))
+avocado_no_major_region <- avocado |> 
+  anti_join(major_region, by = c('region' = 'major_region'))
+avocado_no_major_region_or_state <- avocado_no_major_region |>
+  anti_join(major_state, by = c('region' = 'major_state'))
+avocado_metro_cities <- avocado_no_major_region_or_state |>
+  anti_join(total_us, by = c('region' = 'total_us'))
+avocado_total_us <- avocado |>
+  semi_join(total_us, by = c('region' = 'total_us'))
+avocado_california <- avocado |>
+  semi_join(california_cities, by = c('region' = 'california_cities'))
+
+
+```
+
+```{r}
+avocado |> 
+  anti_join(major_region, by = c('region' = 'major_region')) |>
+  anti_join(major_state, by = c('region' = 'major_state')) |>
+  filter(region != 'TotalUS') |>
+  rename("Small" =  `4046`,
+         "Large" =  `4225`,
+         "Extra Large" = `4770`)
+```
+
+## 3.
+
+```{r}
+avocado_major_region |> 
+  filter(
+    type == 'organic',
+    year == 2017
+  ) |>
+  group_by(region) |>
+  summarize(total = sum(`4046`)) |>
+slice_max(total)
+  
+```
+
+The major region with the most sold, organic, and small Hass avocados in 2017, was the West with 1,870,206.29 avocados.
+
+## 4.
+
+```{r}
+avocado_total_us |>
+  separate(col = Date, into = c('Year', 'Month', 'Day'), sep = '-') |>
+  group_by(Month) |>
+  summarize(total = sum(as.numeric(`Total Volume`))) |>
+slice_max(total)
+
+  
+```
+
+February (Month 02) has the highest volume of total avocado sales, with 486,602,255 avocados.
+
+## 5.
+
+```{r}
+avocado_metro_cities |>
+  group_by(region) |>
+  summarize(average = mean(`Total Volume`)) |>
+  slice_max(average, n = 5)  |>
+  select(region) |>
+  left_join(avocado, by = 'region') |>
+  ggplot( 
+       mapping = aes(x = region, y = `Total Volume`,)) + 
+  geom_boxplot() +
+  labs(title = "Top 5 Metro Regions with the Most Sold Avocados", 
+       y = "Total Volume", x = "Metro Region")
+
+
+```
+
+**Reflection:**
+
+**At first, I used the following code: left_join(avocado, by = 'region'), to add the information of the top 5 regions into my avocado_metro_cities dataset. However, the question is asking us to filter by the top 5 regions, not to mutate the dataset to get the top 5 regions (done by the left_join). After taking a closer look at what the question was asking, I realized that I needed to use a \_\_\_\_\_\_\_ to filter the top 5 regions. The new line of code I used was: \_\_\_\_\_.**
+
+## 6.
+
+```{r}
+#| message: false
+avocado_california |> 
+  group_by(region, type) |>
+  summarize(avg = mean(AveragePrice)) |>
+  select(region, type) |>
+  left_join(avocado, by = c('region' = 'region', 'type' = 'type')) |>
+  ggplot( 
+    mapping = aes(y = AveragePrice,
+                     x = region,
+                     color = type
+                     ) 
+                     ) + 
+  geom_boxplot()+
+  labs(
+    title = "Price of Organic vs Conventional Avocados by region in California",
+    x = "Region (4 California Cities)",
+    y = "Price (in dollars)"
+    )
+
+
+
+
+
+```
+
+Out of these four California regions, San Francisco has the largest difference in the price of avocados between conventional and organic types.
+
+**Reflection:**
+
+## 7.
+
+```{r}
+#| message: false
+avocado_california |>
+  rename("Extra Large" = `4770`,
+         "Large" =  `4225`,
+         "Small" =  `4046`) |>
+  mutate(total = `Extra Large` + Large + Small,
+         Extra_Large_Prop =  `Extra Large` / total,
+         Large_Prop = Large / total,
+         Small_Prop = Small / total) |>
+  group_by(region,type) |>
+  summarize(Small_Prop = mean(Small_Prop),
+            Large_Prop = mean(Large_Prop),
+            Extra_Large_Prop = mean(Extra_Large_Prop)) |>
+  pivot_longer(Small_Prop:Extra_Large_Prop,
+               names_to = "Avocado Size",
+               values_to = "Proportion of Mean Avocados Sold") |>
+  ggplot() + 
+  geom_col(mapping = aes(x = region,y = `Proportion of Mean Avocados Sold`, fill = `Avocado Size`)) + 
+  facet_grid(. ~ type) + 
+  xlab("Regions in California") +
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  scale_fill_manual(values = c("lightgreen", "#4393C3", "lightblue"))
+
+
+```
+
+Citation for: scale_x\_discrete(guide = guide_axis(n.dodge = 2)), to offset x-axis labels: https://stackoverflow.com/questions/50399838/how-to-alternate-a-new-line-for-overlapping-x-axis-labels
+
+Citation for: scale_fill_manual(values = c("lightblue", "#4393C3", "lightgreen")) to customize colors: https://ggplot2.tidyverse.org/reference/scale_manual.html

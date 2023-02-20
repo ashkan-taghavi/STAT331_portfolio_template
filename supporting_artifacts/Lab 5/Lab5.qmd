@@ -1,0 +1,154 @@
+---
+title: "Lab 5"
+author: "Ashkan Taghavi"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    code-fold: true
+    code-summary: "Show code"
+    theme: readable
+editor: visual
+execute: 
+  echo: true
+  error: false
+  warning: false
+  message: false
+---
+## Set-up
+
+```{r setup}
+library(tidyverse)
+library(here)
+
+```
+
+## Importing Data sets
+```{r data}
+surveys <- read_csv(here("Week 2", "Lab2", "surveys.csv"))
+
+```
+
+
+
+### (1) Revisiting Lab 2
+```{r}
+ggplot(data = surveys, mapping = aes(y = fct_reorder(species, weight), x = weight)) +
+  geom_jitter(alpha = 0.25, color = "tomato", size = 0.8) +
+  geom_boxplot(outlier.shape = NA) +    
+  labs(x = "Weight (gm)", y = "", title = "Type of Species by Weight")
+  
+
+
+
+```
+
+### (2) Time-Series Plot
+
+#### Part 1
+```{r}
+surveys_summary <- surveys |>
+  group_by(genus, date)
+
+ggplot(data = surveys_summary,
+       mapping = aes(x = date, y = weight, color = genus)) +
+  geom_line() +
+  labs(x = "Year", y = "Weight (gm)", color = "Genus")
+
+
+```
+
+#### Part 2
+```{r}
+# Group the data by year and genus, and summarize weight by mean
+surveys_summary <- surveys |> 
+  group_by(genus, year) |> 
+  summarize(mean_weight = mean(weight))
+
+ggplot(data = surveys_summary, mapping = aes(x = year, y = mean_weight, color = genus)) +
+  geom_line() +
+  labs(x = "Year", y = "Mean Weight (gm)")
+
+```
+
+#### Part 3
+```{r}
+ggplot(data = surveys_summary, 
+       mapping = aes(x = year, 
+                     y = mean_weight, 
+                     color = fct_reorder(genus, mean_weight))) +
+  geom_line() +
+  labs(x = "Year", y = "Mean Weight (gm)")
+
+```
+
+#### Part 4
+```{r}
+
+ggplot(data = surveys_summary, 
+       mapping = aes(x = year, 
+                     y = mean_weight, 
+                     color = fct_reorder(genus, mean_weight))) +
+  geom_line() +
+  labs(x = "Year", y = "", title = "Mean Weight by Genus over Time") +
+  scale_color_discrete(name = "Genus")
+```
+
+
+### (3) Captures over the Week
+
+#### Part 1
+```{r}
+surveys <- na.omit(surveys)
+
+ggplot(data = surveys, 
+       mapping = aes(x = factor(day_of_week), 
+                     fill = day_of_week)) +
+  geom_bar() +
+  labs(y = "", x = "Day of the Week",
+       title = "Number of Rodents Captured by Day of Week") +
+  scale_fill_discrete(guide = "none")
+
+
+```
+Citation for: scale_fill_discrete(guide = "none") 
+I used this to remove the legend as it would be redundant to have 
+given the x axis labels and fill colors (makes the bars more differentiated).
+Link: https://stackoverflow.com/questions/35618260/remove-legend-ggplot-2-2
+
+#### Part 2
+```{r}
+surveys <- surveys |>
+  mutate(day_of_week = factor(day_of_week,
+                              levels = c("Mon", "Tue", "Wed", "Thu", 
+                                         "Fri", "Sat", "Sun")))
+ggplot(data = surveys, 
+       mapping = aes(x = factor(day_of_week, 
+                                levels = c("Mon", "Tue", "Wed", 
+                                           "Thu", "Fri", "Sat", "Sun")),
+                     fill = day_of_week)) +
+  geom_bar() +
+  labs(y = "", x = "Day of the Week") +
+  scale_fill_discrete(guide = "none") +
+  ggtitle("Number of Rodents Captured by Day of Week")
+
+
+```
+
+
+#### Part 3
+```{r}
+surveys <- surveys |> 
+  mutate(day_group = fct_collapse(day_of_week,
+                                  "Weekday" = c("Mon", "Tue", "Wed", "Thu", "Fri"),
+                                  "Weekend" = c("Sat", "Sun")))
+
+ggplot(data = surveys,
+       mapping = aes(x = day_group, fill = day_group)) +
+  geom_bar() +
+  labs(y = "", x = "Day of the Week Type") +
+  scale_fill_discrete(guide = "none") +
+  ggtitle("Number of Rodents Captured by Weekday vs Weekend")
+
+```
+

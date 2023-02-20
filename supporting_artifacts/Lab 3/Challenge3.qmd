@@ -1,0 +1,80 @@
+# 
+
+---
+title: "Challenge 3"
+author: "Ashkan Taghavi"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    code-fold: true
+    code-summary: "Show code"
+    theme: readable
+editor: visual
+execute: 
+  echo: true
+  error: false
+---
+
+# Challenge 3
+
+## Necessary Code
+
+```{r}
+#| execute:
+#| output: FALSE
+library(tidyverse)
+library(here)
+hipHopData <- read_csv(here::here("Week 3", "Lab 3", "hiphop.csv"))
+hiphop_clean <- hipHopData |> 
+  mutate(
+    sex = as.factor(sex),
+    ethnic = as.factor(ethnic),
+    jayz1 = as.factor(jayz1),
+    fam1 = as.factor(fam1),
+    boondocks1 = as.factor(boondocks1)
+  ) |>
+  filter(city != 0,
+         county != 0,
+         countyBlack != 0
+         )
+hiphop_clean <- hiphop_clean |>
+  mutate(ethnic1 = if_else(ethnic == 'white', 'white', 'non-white'),
+          ethnic1 = as.factor(ethnic1)
+  )
+       
+```
+
+## Published Comparisons
+
+```{r}
+hiphop_clean |>
+group_by(sex) |>
+summarise(across(intl:unclassifiable, mean, na.rm = TRUE)) |>
+  pivot_longer(cols = -sex) |>
+         pivot_wider(names_from = sex, values_from = value) |>
+  mutate(difference = `Female` - `Male`)
+```
+
+It seems that Intl, Vocal, Classical, and Rock were more prevalent in males. Folk, Country, Pop, Alternative, Hiphop, and Unclassifiable were more prevalent in females
+
+```{r}
+hiphop_clean |>
+group_by(ethnic1) |>
+summarise(across(intl:unclassifiable, mean, na.rm = TRUE)) |>
+  pivot_longer(cols = -ethnic1) |>
+         pivot_wider(names_from = ethnic1, values_from = value) |>
+  mutate(difference = `non-white` - white)
+  
+```
+
+It seems that Intl, Pop, Hiphop, and Unclassifiable was more prevalent in non-whites. Vocal, Classical, Folk, Rock, Country, and Alternative were more prevalent in whites.
+
+## Study Design Critique - Data Ethics
+
+Two concerns that I have of this data set:
+
+1.  Bias in Study Design: By choosing hip-hop as the basis for learning new words, the study could be influenced by existing biases. Hip-hop is commonly associated with negative connotations towards African American English, and the study's design and outcomes may only serve to reinforce these prejudices, further marginalizing African American English-speaking communities.
+2.  Inadequate Cultural Awareness: The examination of African American English and recruitment from a hip-hop based event or group in the study may indicate a lack of cultural understanding from the researchers. This could result in insensitive or incorrect depictions of African American English and hip-hop culture, perpetuating damaging stereotypes.
+
+\

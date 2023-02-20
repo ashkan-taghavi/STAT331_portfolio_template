@@ -1,0 +1,58 @@
+---
+title: "Lab 1"
+author: "Ashkan Taghavi"
+format: 
+  html:
+    self-contained: true
+    code-fold: true
+    code-summary: "Show code"
+    theme: readable #additional modification here
+editor: visual
+echo: true
+error: false
+---
+
+# Cars Dataset
+
+```{r}
+summary(cars)
+```
+
+*This dataset contains information about the speed of cars and the distances it takes for the cars to stop. The data was collected in the 1920s. It has 50 rows and 2 variables.*
+
+# Pressure Dataset: Graph of Temperature vs Pressure
+
+```{r, fig.align='center', fig.cap= 'The plot shows the relationship between the Vapor Pressure of Mercury and the Temperature'}
+plot(pressure, xlab = "Temperature (Cº)", ylab ="Pressure (Mercury in millimeters)")
+title("Pressure vs Temperature")
+```
+
+*This dataset contains information about the relation between Temperature (Cº) and Vapor Pressure of Mercury (in Millimeters). The data has 19 rows and 2 variables.*
+
+# Cars Dataset: Stopping Distance vs Speed
+
+```{r}
+#| layout-ncol: 2
+
+dist <- cars$dist
+
+## ****** Updated line of code for revision: 
+hist(dist, xlab = "Stopping Distance (ft)") 
+
+plot(dist, cars$speed, xlab = "Stopping Distance (ft)", ylab= "Speed (mph)")
+
+
+
+```
+
+[Reflection for revision:]{.underline}
+
+Before this revision, my code was: plot(dist, ylab = "Stopping Distance (ft)") , which created a visualization of a scatterplot between the relationship of dist and the row number index. Instead here, the question is asking for us to show a visualization of the *distribution* of the *single* numerical variable 'dist'. After realizing that my original plot was not looking at the frequency of the stopping distances, but was actually plotting the row number associated with each stopping distance point, I noticed that I had originally created a plot on those two numerical variables. To fix this, I switched the type of visualization I used to a histogram through the funtion hist(), as this type of plot can be used show the distribution of the single numerical variable (stopping distance in this case, through its frequency).
+
+Two Aspects to Improve Plot:
+
+-   Add title to plot
+
+-   Learn how to change text font/size/color
+
+Tip used for step 5, I added a HTML theme of Quartz. (changed to readable for revision reflection re submission)

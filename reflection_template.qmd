@@ -1,6 +1,6 @@
 ---
 title: "STAT 331 Portfolio"
-author: "Your name goes here"
+author: "Ashkan Taghavi"
 format: 
   html: 
     self-contained: true
@@ -11,7 +11,7 @@ execute:
   echo: true
 ---
 
-[**My Grade:**]{.underline} I believe my grade equivalent to course work evidenced below to be an \_\_.
+[**My Grade:**]{.underline} I believe my grade equivalent to course work evidenced below to be an A.
 
 [**Learning Objective Evidence:**]{.underline} In the code chunks below, provide code from a Lab or Challenge assignment where you believe you have demonstrated proficiency with the specified learning target. Be sure to specify **where** the code came from (e.g., Lab 4 Question 2).
 
@@ -22,25 +22,41 @@ execute:
 -   `csv`
 
 ```{r wd-1-csv}
+# Lab 4, Import Data Set section
+avocado <- read_csv(here("Week 4", "Lab 4", "avocado.csv"))
 
 ```
 
 -   `xlsx`
 
 ```{r wd-1-xlsx}
+# Practice Activity 4, Question 1
+military <- read_xlsx(here::here("data", 
+                                 "gov_spending_per_capita.xlsx"), 
+                      sheet = "Share of Govt. spending", 
+                      skip = 7, 
+                      n_max = 191)
 
 ```
 
 -   `txt`
 
 ```{r wd-1-txt}
+# Practice Activity 5.2, Setup Section
+message <- read_csv(here::here("data" , "scrambled_message.txt")
+                      )
 
 ```
 
 **WD-2: I can select necessary columns from a dataset.**
 
 ```{r wd-2}
+# Lab 1, Question 2
+dist <- cars$dist
 
+hist(dist, xlab = "Stopping Distance (ft)") 
+
+plot(dist, cars$speed, xlab = "Stopping Distance (ft)", ylab= "Speed (mph)")
 ```
 
 **WD-3: I can filter rows from a dataframe for a *variety* of data types (e.g., numeric, integer, character, factor, date).**
@@ -48,24 +64,59 @@ execute:
 -   numeric
 
 ```{r wd-3-numeric}
+# Lab 4, Question 3
+avocado_major_region |> 
+  filter(
+    type == 'organic',
+    year == 2017
+  ) |>
+  group_by(region) |>
+  summarize(total = sum(`4046`)) |>
+slice_max(total)
+
 
 ```
 
 -   character -- specifically a string
 
 ```{r wd-3-string}
+# Lab 4, Question 2
+avocado |> 
+  anti_join(major_region, by = c('region' = 'major_region')) |>
+  anti_join(major_state, by = c('region' = 'major_state')) |>
+  filter(region != 'TotalUS') |>
+  rename("Small" =  `4046`,
+         "Large" =  `4225`,
+         "Extra Large" = `4770`)
 
 ```
 
 -   factor
 
 ```{r wd-3-factor}
+# Lab 3, Question 12
+hiphop_clean |>
+  filter(sex == 'Female' &
+       ethnic1 == 'non-white') |>
+  group_by(word) |>
+  summarize(fammean = mean(familiarity)) |>
+  slice_min(fammean)
 
 ```
 
 -   date
 
 ```{r wd-3-date}
+# Lab 5, Question 2 Part 1
+surveys_summary <- surveys |>
+  group_by(genus, date)
+
+ggplot(data = surveys_summary,
+       mapping = aes(x = date, y = weight, color = genus)) +
+  geom_line() +
+  labs(x = "Year", y = "Weight (gm)", color = "Genus")
+
+
 
 ```
 
@@ -74,24 +125,78 @@ execute:
 -   numeric
 
 ```{r wd-4-numeric}
+# Lab 4, Question 7
+avocado_california |>
+  rename("Extra Large" = `4770`,
+         "Large" =  `4225`,
+         "Small" =  `4046`) |>
+  mutate(total = `Extra Large` + Large + Small,
+         Extra_Large_Prop =  `Extra Large` / total,
+         Large_Prop = Large / total,
+         Small_Prop = Small / total) |>
+  group_by(region,type) |>
+  summarize(Small_Prop = mean(Small_Prop),
+            Large_Prop = mean(Large_Prop),
+            Extra_Large_Prop = mean(Extra_Large_Prop)) |>
+  pivot_longer(Small_Prop:Extra_Large_Prop,
+               names_to = "Avocado Size",
+               values_to = "Proportion of Mean Avocados Sold") |>
+  ggplot() + 
+  geom_col(mapping = aes(x = region,y = `Proportion of Mean Avocados Sold`, fill = `Avocado Size`)) + 
+  facet_grid(. ~ type) + 
+  xlab("Regions in California") +
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  scale_fill_manual(values = c("lightgreen", "#4393C3", "lightblue"))
 
 ```
 
 -   character -- specifically a string
 
 ```{r wd-4-string}
+# Lab 4, Question 4
+avocado_total_us |>
+  separate(col = Date, into = c('Year', 'Month', 'Day'), sep = '-') |>
+  group_by(Month) |>
+  summarize(total = sum(as.numeric(`Total Volume`))) |>
+slice_max(total)
 
 ```
 
 -   factor
 
 ```{r wd-4-factor}
+# Lab 5, Question 3 Part 3
+surveys <- surveys |> 
+  mutate(day_group = fct_collapse(day_of_week,
+                                  "Weekday" = c("Mon", "Tue", "Wed", "Thu", "Fri"),
+                                  "Weekend" = c("Sat", "Sun")))
+
+ggplot(data = surveys,
+       mapping = aes(x = day_group, fill = day_group)) +
+  geom_bar() +
+  labs(y = "", x = "Day of the Week Type") +
+  scale_fill_discrete(guide = "none") +
+  ggtitle("Number of Rodents Captured by Weekday vs Weekend")
+
+## Lab 4, Question 7
+hiphop_clean <- hiphop_clean |>
+  mutate(ethnic1 = if_else(ethnic == 'white', 'white', 'non-white'),
+         ethnic1 = as.factor(ethnic1)
+  )
+
 
 ```
 
 -   date
 
 ```{r wd-4-date}
+# Lab 4, Question 4
+avocado_total_us |>
+  separate(col = Date, into = c('Year', 'Month', 'Day'), sep = '-') |>
+  group_by(Month) |>
+  summarize(total = sum(as.numeric(`Total Volume`))) |>
+slice_max(total)
+
 
 ```
 
@@ -100,6 +205,18 @@ execute:
 -   `left_join()`
 
 ```{r wd-5-left}
+# Lab 4, Question 5
+avocado_metro_cities |>
+  group_by(region) |>
+  summarize(average = mean(`Total Volume`)) |>
+  slice_max(average, n = 5)  |>
+  select(region) |>
+  left_join(avocado, by = 'region') |>
+  ggplot( 
+       mapping = aes(x = region, y = `Total Volume`,)) + 
+  geom_boxplot() +
+  labs(title = "Top 5 Metro Regions with the Most Sold Avocados", 
+       y = "Total Volume", x = "Metro Region")
 
 ```
 
@@ -112,6 +229,7 @@ execute:
 -   `inner_join()`
 
 ```{r wd-5-inner}
+
 
 ```
 
@@ -126,12 +244,23 @@ execute:
 -   `semi_join()`
 
 ```{r wd-6-semi}
-
+# Challenge 4
+HousePrice <- data.frame(City, Price)
+avocado_california <- avocado |>
+  semi_join(california_cities, by = c('region' = 'california_cities'))
 ```
 
 -   `anti_join()`
 
 ```{r wd-6-anti}
+# Lab 4, Question 2
+avocado |> 
+  anti_join(major_region, by = c('region' = 'major_region')) |>
+  anti_join(major_state, by = c('region' = 'major_state')) |>
+  filter(region != 'TotalUS') |>
+  rename("Small" =  `4046`,
+         "Large" =  `4225`,
+         "Extra Large" = `4770`)
 
 ```
 
@@ -140,12 +269,26 @@ execute:
 -   `pivot_longer()`
 
 ```{r wd-7-long}
+# Challenge 3, Published Comparisons Section
+hiphop_clean |>
+group_by(sex) |>
+summarise(across(intl:unclassifiable, mean, na.rm = TRUE)) |>
+  pivot_longer(cols = -sex) |>
+         pivot_wider(names_from = sex, values_from = value) |>
+  mutate(difference = `Female` - `Male`)
 
 ```
 
 -   `pivot_wider()`
 
 ```{r wd-7-wide}
+# Challenge 3, Published Comparisons Section
+hiphop_clean |>
+group_by(sex) |>
+summarise(across(intl:unclassifiable, mean, na.rm = TRUE)) |>
+  pivot_longer(cols = -sex) |>
+         pivot_wider(names_from = sex, values_from = value) |>
+  mutate(difference = `Female` - `Male`)
 
 ```
 
@@ -160,12 +303,33 @@ I've done this in the following provided assignments:
 -   Example 1
 
 ```{r r-2-1}
-
+# Challenge 3, Second Part of Published Comparisons
+hiphop_clean |>
+  group_by(ethnic1) |>
+  summarise(across(intl:unclassifiable, mean, na.rm = TRUE)) |>
+  pivot_longer(cols = -ethnic1) |>
+  pivot_wider(names_from = ethnic1, values_from = value) |>
+  mutate(difference = `non-white` - white)
+  
 ```
 
 -   Example 2
 
 ```{r r-2-2}
+# Lab 5, Question 3 Part 2
+surveys <- surveys |>
+  mutate(day_of_week = factor(day_of_week,
+                              levels = c("Mon", "Tue", "Wed", "Thu", 
+                                         "Fri", "Sat", "Sun")))
+ggplot(data = surveys, 
+       mapping = aes(x = factor(day_of_week, 
+                                levels = c("Mon", "Tue", "Wed", 
+                                           "Thu", "Fri", "Sat", "Sun")),
+                     fill = day_of_week)) +
+  geom_bar() +
+  labs(y = "", x = "Day of the Week") +
+  scale_fill_discrete(guide = "none") +
+  ggtitle("Number of Rodents Captured by Day of Week")
 
 ```
 
@@ -174,12 +338,34 @@ I've done this in the following provided assignments:
 -   Example 1
 
 ```{r r-3-1}
+# Challenge 4
+HousePrice <- data.frame(City, Price)
+avocado_california <- avocado |>
+  semi_join(california_cities, by = c('region' = 'california_cities'))
 
+avocado_california |>
+  select(AveragePrice, `Total Volume`, type, region) |>
+  group_by(region, type) |>
+  summarize(med_avocado_price = median(AveragePrice)) |>
+  left_join(HousePrice, by = c("region" = "City")) |>
+  ggplot(mapping = aes(y = med_avocado_price, x = Price,
+                       color = type, shape = region)) +
+  geom_point() +
+  labs(title = "Relationship between House Prices and Avocados",
+       x = "Median Housing Price (by California City)", 
+       y = "Median Avocado Price ($)") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_color_discrete(name = "Avocado Type") +
+  scale_shape_manual(values = c(15, 16, 17, 4), name = "City")
 ```
 
 -   Example 2
 
 ```{r r-3-2}
+# Lab 3, Question 9
+hiphop_clean |> 
+  distinct(subj, age, ethnic, sex) |>
+  summary()
 
 ```
 
@@ -190,25 +376,59 @@ I've done this in the following provided assignments:
 -   numeric variables
 
 ```{r dvs-1-num}
+# Lab 5, Question 2 (Time-Series Plot) Part 4
+ggplot(data = surveys_summary, 
+       mapping = aes(x = year, 
+                     y = mean_weight, 
+                     color = fct_reorder(genus, mean_weight))) +
+  geom_line() +
+  labs(x = "Year", y = "", title = "Mean Weight by Genus over Time") +
+  scale_color_discrete(name = "Genus")
 
 ```
 
 -   numeric variables and categorical variables
 
 ```{r dvs-2-num-cat}
+# Lab 5, Question 1 Part 1 (Revisiting Lab 2)
+ggplot(data = surveys, mapping = aes(y = fct_reorder(species, weight), x = weight)) +
+  geom_jitter(alpha = 0.25, color = "tomato", size = 0.8) +
+  geom_boxplot(outlier.shape = NA) +    
+  labs(x = "Weight (gm)", y = "", title = "Type of Species by Weight")
 
 ```
 
 -   categorical variables
 
 ```{r dvs-2-cat}
+# Lab 5, Question 3 (Captures over the Week) Part 2
+surveys <- surveys |>
+  mutate(day_of_week = factor(day_of_week,
+                              levels = c("Mon", "Tue", "Wed", "Thu", 
+                                         "Fri", "Sat", "Sun")))
+ggplot(data = surveys, 
+       mapping = aes(x = factor(day_of_week, 
+                                levels = c("Mon", "Tue", "Wed", 
+                                           "Thu", "Fri", "Sat", "Sun")),
+                     fill = day_of_week)) +
+  geom_bar() +
+  labs(y = "", x = "Day of the Week") +
+  scale_fill_discrete(guide = "none") +
+  ggtitle("Number of Rodents Captured by Day of Week")
 
 ```
 
 -   dates
 
 ```{r dvs-2-date}
+# Lab 5, Question 2 (Time-Series Plot) Part 1
+surveys_summary <- surveys |>
+  group_by(genus, date)
 
+ggplot(data = surveys_summary,
+       mapping = aes(x = date, y = weight, color = genus)) +
+  geom_line() +
+  labs(x = "Year", y = "Weight (gm)", color = "Genus")
 ```
 
 **DVS-2: I use plot modifications to make my visualization clear to the reader.**
@@ -216,12 +436,48 @@ I've done this in the following provided assignments:
 -   Example 1
 
 ```{r dvs-2-1}
-
+# Lab 4, Question 7
+avocado_california |>
+  rename("Extra Large" = `4770`,
+         "Large" =  `4225`,
+         "Small" =  `4046`) |>
+  mutate(total = `Extra Large` + Large + Small,
+         Extra_Large_Prop =  `Extra Large` / total,
+         Large_Prop = Large / total,
+         Small_Prop = Small / total) |>
+  group_by(region,type) |>
+  summarize(Small_Prop = mean(Small_Prop),
+            Large_Prop = mean(Large_Prop),
+            Extra_Large_Prop = mean(Extra_Large_Prop)) |>
+  pivot_longer(Small_Prop:Extra_Large_Prop,
+               names_to = "Avocado Size",
+               values_to = "Proportion of Mean Avocados Sold") |>
+  ggplot() + 
+  geom_col(mapping = aes(x = region,y = `Proportion of Mean Avocados Sold`, fill = `Avocado Size`)) + 
+  facet_grid(. ~ type) + 
+  xlab("Regions in California") +
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  scale_fill_manual(values = c("lightgreen", "#4393C3", "lightblue"))
 ```
 
 -   Example 2
 
 ```{r dvs-2-2}
+# Lab 5, Question 3 Part 2
+surveys <- surveys |>
+  mutate(day_of_week = factor(day_of_week,
+                              levels = c("Mon", "Tue", "Wed", "Thu", 
+                                         "Fri", "Sat", "Sun")))
+ggplot(data = surveys, 
+       mapping = aes(x = factor(day_of_week, 
+                                levels = c("Mon", "Tue", "Wed", 
+                                           "Thu", "Fri", "Sat", "Sun")),
+                     fill = day_of_week)) +
+  geom_bar() +
+  labs(y = "", x = "Day of the Week") +
+  scale_fill_discrete(guide = "none") +
+  ggtitle("Number of Rodents Captured by Day of Week")
+
 
 ```
 
@@ -230,12 +486,45 @@ I've done this in the following provided assignments:
 -   Example 1
 
 ```{r dvs-3-1}
+# Challenge 4
+HousePrice <- data.frame(City, Price)
+avocado_california <- avocado |>
+  semi_join(california_cities, by = c('region' = 'california_cities'))
+
+avocado_california |>
+  select(AveragePrice, `Total Volume`, type, region) |>
+  group_by(region, type) |>
+  summarize(med_avocado_price = median(AveragePrice)) |>
+  left_join(HousePrice, by = c("region" = "City")) |>
+  ggplot(mapping = aes(y = med_avocado_price, x = Price,
+                       color = type, shape = region)) +
+  geom_point() +
+  labs(title = "Relationship between House Prices and Avocados",
+       x = "Median Housing Price (by California City)", 
+       y = "Median Avocado Price ($)") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_color_discrete(name = "Avocado Type") +
+  scale_shape_manual(values = c(15, 16, 17, 4), name = "City")
 
 ```
 
 -   Example 2
 
 ```{r dvs-3-2}
+# Challenge 2 (Challenge Question: Spicy)
+
+colors <- c("red", "green", "blue",  "purple", "darkorange", "magenta", "turquoise", 
+                 "darkgreen")
+
+# Create box plot with specified colors
+ggplot(data = surveys, aes(x = weight, y = species, color = genus)) +
+  geom_boxplot() +
+  scale_color_manual(values = colors) +
+  labs(title = "Distribution of Weights for Different Species",
+       y = "Species", 
+       x = "Weight (grams)", 
+       color = "Genus of Rodent") + 
+  scale_x_log10()
 
 ```
 
@@ -244,12 +533,32 @@ I've done this in the following provided assignments:
 -   Example 1
 
 ```{r dvs-4-1}
+# Lab 4 Question 5
+avocado_metro_cities |>
+  group_by(region) |>
+  summarize(average = mean(`Total Volume`)) |>
+  slice_max(average, n = 5)  |>
+  select(region) |>
+  left_join(avocado, by = 'region') |>
+  ggplot( 
+       mapping = aes(x = region, y = `Total Volume`,)) + 
+  geom_boxplot() +
+  labs(title = "Top 5 Metro Regions with the Most Sold Avocados", 
+       y = "Total Volume", x = "Metro Region")
 
 ```
 
 -   Example 2
 
 ```{r dvs-4-2}
+# Lab 5, Question 2 Part 2
+surveys_summary <- surveys |> 
+  group_by(genus, year) |> 
+  summarize(mean_weight = mean(weight))
+
+ggplot(data = surveys_summary, mapping = aes(x = year, y = mean_weight, color = genus)) +
+  geom_line() +
+  labs(x = "Year", y = "Mean Weight (gm)")
 
 ```
 
@@ -258,12 +567,22 @@ I've done this in the following provided assignments:
 -   Example 1
 
 ```{r dvs-5-1}
-
+# Challenge 3, Published Comparisons Code Chunk 2
+hiphop_clean |>
+  group_by(ethnic1) |>
+  summarise(across(intl:unclassifiable, mean, na.rm = TRUE)) |>
+  pivot_longer(cols = -ethnic1) |>
+  pivot_wider(names_from = ethnic1, values_from = value) |>
+  mutate(difference = `non-white` - white)
 ```
 
 -   Example 2
 
 ```{r dvs-5-2}
+# Lab 3, Question 9
+hiphop_clean |> 
+  distinct(subj, age, ethnic, sex) |>
+  summary()
 
 ```
 
@@ -272,13 +591,14 @@ I've done this in the following provided assignments:
 -   Example 1
 
 ```{r dvs-6-1}
+N/A
 
 ```
 
 -   Example 2
 
 ```{r dvs-6-2}
-
+N/A
 ```
 
 **DVS-7: I show creativity in my tables.**
@@ -286,13 +606,13 @@ I've done this in the following provided assignments:
 -   Example 1
 
 ```{r dvs-7-1}
-
+N/A
 ```
 
 -   Example 2
 
 ```{r dvs-7-2}
-
+N/A
 ```
 
 ## Program Efficiency
@@ -302,19 +622,34 @@ I've done this in the following provided assignments:
 -   using a single function call
 
 ```{r pe-1-one-call}
+# Challenge 3
+hiphop_clean |>
+  group_by(ethnic1) |>
+  summarise(across(intl:unclassifiable, mean, na.rm = TRUE)) |>
+  pivot_longer(cols = -ethnic1) |>
+  pivot_wider(names_from = ethnic1, values_from = value) |>
+  mutate(difference = `non-white` - white)
 
 ```
 
 -   `across()`
 
 ```{r pe-1-across}
+# Lab 3, Question 5
+hiphop_clean <- hipHopData |> 
+  mutate(across(c(sex, ethnic, jayz1, fam1, boondocks1), .fns = as.factor
+                )) |>
+  filter(city != 0,
+         county != 0,
+         countyBlack != 0
+         )
 
 ```
 
 -   `map()` functions
 
 ```{r pe-1-map-1}
-
+N/A
 ```
 
 **PE-2: I can write functions to reduce repetition in my code.**
@@ -322,12 +657,43 @@ I've done this in the following provided assignments:
 -   Example 1
 
 ```{r pe2-1}
+# Challenge 4
 
+HousePrice <- data.frame(City, Price)
+avocado_california <- avocado |>
+  semi_join(california_cities, by = c('region' = 'california_cities'))
+
+avocado_california |>
+  select(AveragePrice, `Total Volume`, type, region) |>
+  group_by(region, type) |>
+  summarize(med_avocado_price = median(AveragePrice)) |>
+  left_join(HousePrice, by = c("region" = "City")) |>
+  ggplot(mapping = aes(y = med_avocado_price, x = Price,
+                       color = type, shape = region)) +
+  geom_point() +
+  labs(title = "Relationship between House Prices and Avocados",
+       x = "Median Housing Price (by California City)", 
+       y = "Median Avocado Price ($)") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_color_discrete(name = "Avocado Type") +
+  scale_shape_manual(values = c(15, 16, 17, 4), name = "City")
 ```
 
 -   Example 2
 
 ```{r pe2-2}
+# Lab 4, Question 14
+
+hiphop_clean |>
+  filter(sex == 'Male',
+       ethnic == 'white',
+       age >= 17,
+       age <= 23,
+       city >= 10000,
+       city <= 60000) |>
+  slice_max(bieber) |>
+  group_by(subj) |>
+  summarize() 
 
 ```
 
@@ -336,17 +702,25 @@ I've done this in the following provided assignments:
 -   `across()`
 
 ```{r pe-3-across}
+# Challenge 3
+
+hiphop_clean |>
+  group_by(ethnic1) |>
+  summarise(across(intl:unclassifiable, mean, na.rm = TRUE)) |>
+  pivot_longer(cols = -ethnic1) |>
+  pivot_wider(names_from = ethnic1, values_from = value) |>
+  mutate(difference = `non-white` - white)
 
 ```
 
 -   `map()` functions (Provide 2 Examples)
 
 ```{r pe-3-map-1}
-
+N/A
 ```
 
 ```{r pe-3-map-2}
-
+N/A
 ```
 
 **PE-4: I can use modern tools when carrying out my analysis.**
@@ -354,12 +728,32 @@ I've done this in the following provided assignments:
 -   Example 1
 
 ```{r pe-4-1}
+# Lab 4, Question 14
+
+hiphop_clean |>
+  filter(sex == 'Male',
+       ethnic == 'white',
+       age >= 17,
+       age <= 23,
+       city >= 10000,
+       city <= 60000) |>
+  slice_max(bieber) |>
+  group_by(subj) |>
+  summarize() 
+
 
 ```
 
 -   Example 2
 
 ```{r pe-4-2}
+# Lab 3, Question 12
+hiphop_clean |>
+  filter(sex == 'Female' &
+       ethnic1 == 'non-white') |>
+  group_by(word) |>
+  summarize(fammean = mean(familiarity)) |>
+  slice_min(fammean)
 
 ```
 
@@ -370,13 +764,13 @@ I've done this in the following provided assignments:
 -   Example 1
 
 ```{r dsm-1-1}
-
+N/A
 ```
 
 -   Example 2
 
 ```{r dsm-1-2}
-
+N/A
 ```
 
 **DSM-2: I can fit a linear regression and extract necessary summary measures.**
@@ -384,23 +778,29 @@ I've done this in the following provided assignments:
 -   Example 1
 
 ```{r dsm-2-1}
-
+N/A
 ```
 
 -   Example 2
 
 ```{r dsm-2-2}
-
+N/A
 ```
 
 ## Revising My Thinking
 
 <!-- How did you revise your thinking throughout the course? How did you revise your thinking on the code examples you have provided in your portfolio? -->
 
+Upon reflection on the first half of this course, I feel like my mindset towards how this class operates combined with my overall general expectation for classes in the future has changed immensely. This stems from the fact that I have never taken a class with this type of grading structure. As a result, when I first entered week one, I felt like I somewhat downplayed what would be expected in the class. I was not really getting down some key dates such as when certain assignments like the pre-week and practice work were due, which lead to me having to rush through the posted coursework on Canvas. For me, it was difficult to find the flow of this course the first couple of weeks, which lead to me feeling behind at times. Going into week 3, I started to have a better understanding of the week to week workload and began organizing my time to allow me the appropriate amount of time to go through the coursework videos and readings, which made me much more prepared and confident with the labs and challenge problems. Because of this change, it allowed me transition from a "catching up" mindset, to a more curious and inquisitive mindset, taking the time to fully understand topics and dive into the curiosity it sparked. I also believe that my start to the course taught me to be more reflective on how ways I can improve. I am really starting to enjoy the format of this class because there is no longer any stress or negative feelings when I get assignments back that I don't get 100% on. Now when I see that I get a "G", my mindset instantly goes to an eagerness of figuring out my mistake and finding way to fix it or better my code. Thus far, every assignment in which I did not fully receive an S on, I made sure to understand my mistake(s) and resubmit a new correct solution with a thoughtful reflection.
+
 ## Extending My Thinking
 
 <!-- How did you extended your thinking throughout the course? How did you extend your thinking on the code examples you have provided in your portfolio? -->
 
+Going further on what was stated above, once I fell into the flow of the course and shifted my organization and mindset, I began to dive in further when working on the labs and challenge problems. I think this shift can be reflected in my Challenge Problem 3 submission, when I learned how to use pivot_longer/pivot_wider before it presented in class. I wanted to take a different approach the problem and after reading about pivoting I attempted to include it in my code. Another example of extending my thinking can be seen in my Lab 4, I included outside citations to help me replicate the plot in question 7. The original plot I made had overlapping x-axis labels, so I used outside sources to find and learn how use scale_x\_discrete() to have x-axis vertically arranged to be offset. I also researched scale_fill_manual(), to customize the colors of the specific proportions in the my bar plot.
+
 ## Peer Support & Collaboration
 
 <!-- Include an image of feedback you gave that you are proud of (either in a peer review or in Discord) -->
+
+I have been to every class, and have tried to actively participate in class discussions when possible. I have also put an emphasis on the effort I put into my peer-code-reviews, making sure to take the time to fully review my peers' submissions and offer genuine feedback. This is important to me, because, just as the same way I expect to receive genuine and useful feedback, I want to provide the same treatment to my peers. I also believe my group and I have done a really great job in participating with each other and being helpful in attempting to answer any questions one of us might have. I have seen my group promote a positive team environment by taking time after class to answer questions, exchange contact information to stay in touch, and even finish practice activities outside the classroom. I put an image of an example of some feedback I gave in my peer review for Lab 5 in the supporting artifacts folder.
