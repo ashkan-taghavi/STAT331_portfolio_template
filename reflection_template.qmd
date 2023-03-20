@@ -51,12 +51,12 @@ message <- read_csv(here::here("data" , "scrambled_message.txt")
 **WD-2: I can select necessary columns from a dataset.**
 
 ```{r wd-2}
-# Lab 1, Question 2
-dist <- cars$dist
-
-hist(dist, xlab = "Stopping Distance (ft)") 
-
-plot(dist, cars$speed, xlab = "Stopping Distance (ft)", ylab= "Speed (mph)")
+# Lab 4, Question 5
+top_regions <- avocado_metro_cities %>%
+  group_by(region) %>%
+  summarize(average = mean(`Total Volume`)) %>%
+  slice_max(average, n = 5) %>%
+  select(region)
 ```
 
 **WD-3: I can filter rows from a dataframe for a *variety* of data types (e.g., numeric, integer, character, factor, date).**
@@ -80,14 +80,10 @@ slice_max(total)
 -   character -- specifically a string
 
 ```{r wd-3-string}
-# Lab 4, Question 2
-avocado |> 
-  anti_join(major_region, by = c('region' = 'major_region')) |>
-  anti_join(major_state, by = c('region' = 'major_state')) |>
-  filter(region != 'TotalUS') |>
-  rename("Small" =  `4046`,
-         "Large" =  `4225`,
-         "Extra Large" = `4770`)
+# Practice Activity 5.2, Question 3
+letter_m <- message %>% 
+  filter(str_detect(Word, pattern = "^m"))
+print(letter_m)
 
 ```
 
@@ -107,14 +103,14 @@ hiphop_clean |>
 -   date
 
 ```{r wd-3-date}
-# Lab 5, Question 2 Part 1
-surveys_summary <- surveys |>
-  group_by(genus, date)
+# Practice Activity 5.1, Question 3
+thanksgiving <- ymd("2018 11 22")
+thanksgiving <- force_tz(thanksgiving, tzone = "America/Los_Angeles")
 
-ggplot(data = surveys_summary,
-       mapping = aes(x = date, y = weight, color = genus)) +
-  geom_line() +
-  labs(x = "Year", y = "Weight (gm)", color = "Genus")
+thanksgiving_int <- (thanksgiving - days(35)) %--% (thanksgiving + days(35))
+
+suspects <- suspects %>%
+  filter(Time.Spotted %within% thanksgiving_int)
 
 
 
@@ -153,12 +149,12 @@ avocado_california |>
 -   character -- specifically a string
 
 ```{r wd-4-string}
-# Lab 4, Question 4
-avocado_total_us |>
-  separate(col = Date, into = c('Year', 'Month', 'Day'), sep = '-') |>
-  group_by(Month) |>
-  summarize(total = sum(as.numeric(`Total Volume`))) |>
-slice_max(total)
+# Practice Activity 5.2, Question 5
+punct <- message %>%
+  mutate(symbols = str_extract_all(Word, pattern = "[[:punct:]]")) %>%
+  unnest(symbols) %>%
+  filter(nchar(symbols) > 0)
+print(punct)
 
 ```
 
@@ -190,12 +186,15 @@ hiphop_clean <- hiphop_clean |>
 -   date
 
 ```{r wd-4-date}
-# Lab 4, Question 4
-avocado_total_us |>
-  separate(col = Date, into = c('Year', 'Month', 'Day'), sep = '-') |>
-  group_by(Month) |>
-  summarize(total = sum(as.numeric(`Total Volume`))) |>
-slice_max(total)
+# Practice Activity 5.1, Question 6
+start_time <- ymd_hms("1970-01-01 00:00:00")
+start_time <- force_tz(start_time, tz = ("America/Los_Angeles"))
+
+suspects <- suspects |>
+  mutate(diff = difftime(start_time, Time.Spotted, units = "mins")
+  ) |>
+  filter((as.integer(diff) %% 10) == 0)
+
 
 
 ```
@@ -205,18 +204,29 @@ slice_max(total)
 -   `left_join()`
 
 ```{r wd-5-left}
-# Lab 4, Question 5
-avocado_metro_cities |>
-  group_by(region) |>
-  summarize(average = mean(`Total Volume`)) |>
-  slice_max(average, n = 5)  |>
-  select(region) |>
-  left_join(avocado, by = 'region') |>
-  ggplot( 
-       mapping = aes(x = region, y = `Total Volume`,)) + 
-  geom_boxplot() +
-  labs(title = "Top 5 Metro Regions with the Most Sold Avocados", 
-       y = "Total Volume", x = "Metro Region")
+# Challenge 4, Challenge
+City <- c('Sacramento', 'LosAngeles','SanFrancisco','SanDiego')
+Price <- c(330000, 705000, 1402000, 600000)
+
+HousePrice <- data.frame(City, Price)
+avocado_california <- avocado |>
+  semi_join(california_cities, by = c('region' = 'california_cities'))
+
+avocado_california |>
+  select(AveragePrice, `Total Volume`, type, region) |>
+  group_by(region, type) |>
+  summarize(med_avocado_price = median(AveragePrice)) |>
+  left_join(HousePrice, by = c("region" = "City")) |>
+  ggplot(mapping = aes(y = med_avocado_price, x = Price,
+                       color = type, shape = region)) +
+  geom_point() +
+  labs(title = "Relationship between House Prices and Avocados",
+       x = "Median Housing Price (by California City)", 
+       y = "Median Avocado Price ($)") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_color_discrete(name = "Avocado Type") +
+  scale_shape_manual(values = c(15, 16, 17, 4), name = "City")
+
 
 ```
 
@@ -270,25 +280,28 @@ avocado |>
 
 ```{r wd-7-long}
 # Challenge 3, Published Comparisons Section
-hiphop_clean |>
-group_by(sex) |>
-summarise(across(intl:unclassifiable, mean, na.rm = TRUE)) |>
-  pivot_longer(cols = -sex) |>
-         pivot_wider(names_from = sex, values_from = value) |>
-  mutate(difference = `Female` - `Male`)
+hiphop_clean %>%
+  group_by(ethnic1) %>%
+  summarise(across(.cols = intl:unclassifiable, .fns = mean, na.rm = TRUE)) %>%
+  pivot_longer(cols = -ethnic1) %>%
+  pivot_wider(names_from = ethnic1, values_from = value) %>%
+  mutate(difference = `non-white` - white)
 
 ```
 
 -   `pivot_wider()`
 
 ```{r wd-7-wide}
-# Challenge 3, Published Comparisons Section
-hiphop_clean |>
-group_by(sex) |>
-summarise(across(intl:unclassifiable, mean, na.rm = TRUE)) |>
-  pivot_longer(cols = -sex) |>
-         pivot_wider(names_from = sex, values_from = value) |>
-  mutate(difference = `Female` - `Male`)
+# Challenge 9, Question 3.2
+statesnames_a |> 
+  filter(Sex == 'F') |>
+  pivot_wider(names_from = Sex, values_from = Count) |>
+  filter(Name == 'Allison')  |>
+  group_by(State) |>
+  summarize(sum(F)) |>
+    rename(
+         "Number of Female-assigned Babies" = "sum(F)") |>
+  kable()
 
 ```
 
@@ -298,39 +311,44 @@ summarise(across(intl:unclassifiable, mean, na.rm = TRUE)) |>
 
 I've done this in the following provided assignments:
 
+I have used Quarto and the here package in every lab and challenge assignment. My Challenge 9 is a great example of a professional looking, reproducible analysis.
+
 **R-2: I can write well documented and tidy code.**
 
 -   Example 1
 
 ```{r r-2-1}
 # Challenge 3, Second Part of Published Comparisons
-hiphop_clean |>
-  group_by(ethnic1) |>
-  summarise(across(intl:unclassifiable, mean, na.rm = TRUE)) |>
-  pivot_longer(cols = -ethnic1) |>
-  pivot_wider(names_from = ethnic1, values_from = value) |>
+hiphop_clean %>%
+  group_by(ethnic1) %>%
+  summarise(across(.cols = intl:unclassifiable, .fns = mean, na.rm = TRUE)) %>%
+  pivot_longer(cols = -ethnic1) %>%
+  pivot_wider(names_from = ethnic1, values_from = value) %>%
   mutate(difference = `non-white` - white)
-  
 ```
 
 -   Example 2
 
 ```{r r-2-2}
-# Lab 5, Question 3 Part 2
-surveys <- surveys |>
-  mutate(day_of_week = factor(day_of_week,
-                              levels = c("Mon", "Tue", "Wed", "Thu", 
-                                         "Fri", "Sat", "Sun")))
-ggplot(data = surveys, 
-       mapping = aes(x = factor(day_of_week, 
-                                levels = c("Mon", "Tue", "Wed", 
-                                           "Thu", "Fri", "Sat", "Sun")),
-                     fill = day_of_week)) +
-  geom_bar() +
-  labs(y = "", x = "Day of the Week") +
-  scale_fill_discrete(guide = "none") +
-  ggtitle("Number of Rodents Captured by Day of Week")
+# Challenge 4
+HousePrice <- data.frame(City, Price)
+avocado_california <- avocado |>
+  semi_join(california_cities, by = c('region' = 'california_cities'))
 
+avocado_california |>
+  select(AveragePrice, `Total Volume`, type, region) |>
+  group_by(region, type) |>
+  summarize(med_avocado_price = median(AveragePrice)) |>
+  left_join(HousePrice, by = c("region" = "City")) |>
+  ggplot(mapping = aes(y = med_avocado_price, x = Price,
+                       color = type, shape = region)) +
+  geom_point() +
+  labs(title = "Relationship between House Prices and Avocados",
+       x = "Median Housing Price (by California City)", 
+       y = "Median Avocado Price ($)") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_color_discrete(name = "Avocado Type") +
+  scale_shape_manual(values = c(15, 16, 17, 4), name = "City")
 ```
 
 **R-3: I can write robust programs that are resistant to changes in inputs.**
@@ -362,10 +380,13 @@ avocado_california |>
 -   Example 2
 
 ```{r r-3-2}
-# Lab 3, Question 9
-hiphop_clean |> 
-  distinct(subj, age, ethnic, sex) |>
-  summary()
+# Lab 3, Question 12
+hiphop_clean |>
+  filter(sex == 'Female' &
+       ethnic1 == 'non-white') |>
+  group_by(word) |>
+  summarize(fammean = mean(familiarity)) |>
+  slice_min(fammean)
 
 ```
 
@@ -376,14 +397,11 @@ hiphop_clean |>
 -   numeric variables
 
 ```{r dvs-1-num}
-# Lab 5, Question 2 (Time-Series Plot) Part 4
-ggplot(data = surveys_summary, 
-       mapping = aes(x = year, 
-                     y = mean_weight, 
-                     color = fct_reorder(genus, mean_weight))) +
-  geom_line() +
-  labs(x = "Year", y = "", title = "Mean Weight by Genus over Time") +
-  scale_color_discrete(name = "Genus")
+# Lab 2, Question 5
+ggplot(data = surveys, mapping = aes(x = weight, y = hindfoot_length)) +  
+       geom_point(alpha = 0.8) +
+       xlab("Weight (grams)") +
+       ylab("Hindfoot Length (mm)")
 
 ```
 
@@ -575,21 +593,27 @@ ggplot(data = surveys_summary, mapping = aes(x = year, y = mean_weight, color = 
 
 ```{r dvs-5-1}
 # Challenge 3, Published Comparisons Code Chunk 2
-hiphop_clean |>
-  group_by(ethnic1) |>
-  summarise(across(intl:unclassifiable, mean, na.rm = TRUE)) |>
-  pivot_longer(cols = -ethnic1) |>
-  pivot_wider(names_from = ethnic1, values_from = value) |>
+# Revised code to new format of across function
+hiphop_clean %>%
+  group_by(ethnic1) %>%
+  summarise(across(.cols = intl:unclassifiable, .fns = mean, na.rm = TRUE)) %>%
+  pivot_longer(cols = -ethnic1) %>%
+  pivot_wider(names_from = ethnic1, values_from = value) %>%
   mutate(difference = `non-white` - white)
 ```
 
 -   Example 2
 
 ```{r dvs-5-2}
-# Lab 3, Question 9
-hiphop_clean |> 
-  distinct(subj, age, ethnic, sex) |>
-  summary()
+# Practice Activity 4
+military_clean <- military %>% 
+  mutate(across(.cols = `1988`:`2019`,
+                .fns = ~ na_if(.x , y = ". .")
+                ),
+         across(.cols = `1988`:`2019`,
+                .fns = ~ na_if(.x, y = "xxx")
+                )
+         )
 
 ```
 
@@ -598,14 +622,40 @@ hiphop_clean |>
 -   Example 1
 
 ```{r dvs-6-1}
-N/A
+# Challenge 9, "Importing Dataset" Section
+statesnames_a <- read.csv(here::here("Week 9", "Lab 9", "StateNames_A.csv"))
+statesnames_a <- statesnames_a |>
+  rename("Sex" = "Gender"
+         )
+statesnames_a |>
+  datatable(filter = 'bottom', options = list(pageLength = 100)) |>
+  formatStyle(c('Name', 'Year', 'Sex', 'State', 'Count'),  
+              color = 'darkred', 
+              backgroundColor ='salmon', 
+              fontWeight = 'bold')
 
 ```
 
 -   Example 2
 
 ```{r dvs-6-2}
-N/A
+# Challenge 9, Question 3.1
+statesnames_a |> 
+  pivot_wider(names_from = Sex, values_from = Count) |>
+  filter(Name == 'Allison') |>
+mutate(
+  across(c('F', 'M'), ~replace_na(.x, 0))) |>
+  group_by(State) |>
+  summarize(across(F:M, sum)) |>
+  rename("Number of Male-assigned Babies" = "M",
+         "Number of Female-assigned Babies" = "F") |>
+  datatable(
+  head(statesnames_a),
+  caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center;',
+    'Table 1: ', htmltools::em('The Number of babies are mostly Female-assigned ') 
+  )) |>
+  formatStyle('State',  color = 'blue', backgroundColor = 'green', fontWeight = 'bold')
 ```
 
 **DVS-7: I show creativity in my tables.**
@@ -613,13 +663,34 @@ N/A
 -   Example 1
 
 ```{r dvs-7-1}
-N/A
+# Challenge 9, "Importing Dataset" Section
+statesnames_a <- read.csv(here::here("Week 9", "Lab 9", "StateNames_A.csv"))
+statesnames_a <- statesnames_a |>
+  rename("Sex" = "Gender"
+         )
+statesnames_a |>
+  datatable(filter = 'bottom', options = list(pageLength = 100)) |>
+  formatStyle(c('Name', 'Year', 'Sex', 'State', 'Count'),  
+              color = 'darkred', 
+              backgroundColor ='salmon', 
+              fontWeight = 'bold')
+
 ```
 
 -   Example 2
 
 ```{r dvs-7-2}
-N/A
+# Challenge 9, Question 3.2
+statesnames_a |> 
+  filter(Sex == 'F') |>
+  pivot_wider(names_from = Sex, values_from = Count) |>
+  filter(Name == 'Allison')  |>
+  group_by(State) |>
+  summarize(sum(F)) |>
+    rename(
+         "Number of Female-assigned Babies" = "sum(F)") |>
+  kable()
+
 ```
 
 ## Program Efficiency
@@ -629,12 +700,13 @@ N/A
 -   using a single function call
 
 ```{r pe-1-one-call}
-# Challenge 3
-hiphop_clean |>
-  group_by(ethnic1) |>
-  summarise(across(intl:unclassifiable, mean, na.rm = TRUE)) |>
-  pivot_longer(cols = -ethnic1) |>
-  pivot_wider(names_from = ethnic1, values_from = value) |>
+# Challenge 3, Published Comparisons Code Chunk 2
+# Revised code to new format of across function
+hiphop_clean %>%
+  group_by(ethnic1) %>%
+  summarise(across(.cols = intl:unclassifiable, .fns = mean, na.rm = TRUE)) %>%
+  pivot_longer(cols = -ethnic1) %>%
+  pivot_wider(names_from = ethnic1, values_from = value) %>%
   mutate(difference = `non-white` - white)
 
 ```
@@ -642,21 +714,35 @@ hiphop_clean |>
 -   `across()`
 
 ```{r pe-1-across}
-# Lab 3, Question 5
-hiphop_clean <- hipHopData |> 
-  mutate(across(c(sex, ethnic, jayz1, fam1, boondocks1), .fns = as.factor
-                )) |>
-  filter(city != 0,
-         county != 0,
-         countyBlack != 0
+# Practice Activity 4
+military_clean <- military %>% 
+  mutate(across(.cols = `1988`:`2019`,
+                .fns = ~ na_if(.x , y = ". .")
+                ),
+         across(.cols = `1988`:`2019`,
+                .fns = ~ na_if(.x, y = "xxx")
+                )
          )
-
 ```
 
 -   `map()` functions
 
 ```{r pe-1-map-1}
-N/A
+# Lab 8, Full Song
+xmas2 <- xmas |>
+  mutate(
+    day.num = as.character(english::english(Day)), 
+    Full.Phrase = pmap_chr(.l = list(num_word = day.num, 
+                                     item = Gift.Item, 
+                                     verb = Verb, 
+                                     adjective = Adjective, 
+                                     location = Location), 
+                           .f = make_phrase)
+  )
+
+map_chr(1:12, ~sing_line(xmas2, .x, Full.Phrase)) |>
+  str_c(collapse = "\n") |>
+  cat()
 ```
 
 **PE-2: I can write functions to reduce repetition in my code.**
@@ -711,11 +797,11 @@ hiphop_clean |>
 ```{r pe-3-across}
 # Challenge 3
 
-hiphop_clean |>
-  group_by(ethnic1) |>
-  summarise(across(intl:unclassifiable, mean, na.rm = TRUE)) |>
-  pivot_longer(cols = -ethnic1) |>
-  pivot_wider(names_from = ethnic1, values_from = value) |>
+hiphop_clean %>%
+  group_by(ethnic1) %>%
+  summarise(across(.cols = intl:unclassifiable, .fns = mean, na.rm = TRUE)) %>%
+  pivot_longer(cols = -ethnic1) %>%
+  pivot_wider(names_from = ethnic1, values_from = value) %>%
   mutate(difference = `non-white` - white)
 
 ```
@@ -723,11 +809,28 @@ hiphop_clean |>
 -   `map()` functions (Provide 2 Examples)
 
 ```{r pe-3-map-1}
-N/A
+# Lab 8, Full Song
+xmas2 <- xmas |>
+  mutate(
+    day.num = as.character(english::english(Day)), 
+    Full.Phrase = pmap_chr(.l = list(num_word = day.num, 
+                                     item = Gift.Item, 
+                                     verb = Verb, 
+                                     adjective = Adjective, 
+                                     location = Location), 
+                           .f = make_phrase)
+  )
+
+map_chr(1:12, ~sing_line(xmas2, .x, Full.Phrase)) |>
+  str_c(collapse = "\n") |>
+  cat()
 ```
 
 ```{r pe-3-map-2}
-N/A
+# Challenge 8, Larger Testing
+map_chr(1:12, ~ sing_line(xmas2, .x, Full.Phrase)) |>
+  str_c(collapse = "\n") |>
+  cat()
 ```
 
 **PE-4: I can use modern tools when carrying out my analysis.**
@@ -771,13 +874,28 @@ hiphop_clean |>
 -   Example 1
 
 ```{r dsm-1-1}
-N/A
-```
+# Practice Activity 9
 
--   Example 2
+set.seed(1957)
 
-```{r dsm-1-2}
-N/A
+music_man <- function(n_tromb, n_cor, n_reed){
+  
+  trombones <- rnorm(n_tromb, mean = 4.6, sd = 0.8)
+  cornets <- runif(n_cor, min = 1.5, max= 3.5 )
+  reeds <- rchisq(n_reed, 4)
+  total_weight<- sum(trombones,cornets, reeds)
+  
+  
+  return(total_weight)
+  
+}
+
+my_weights <- map_dbl(.x = 1:1000, 
+                      .f = ~ music_man(n_tromb = 76, 
+                                       n_cor = 110, 
+                                       n_reed = 1035)
+                      ) 
+sum(my_weights < 4532)
 ```
 
 **DSM-2: I can fit a linear regression and extract necessary summary measures.**
@@ -785,20 +903,36 @@ N/A
 -   Example 1
 
 ```{r dsm-2-1}
-N/A
+# Lab 9, Modelling the number of Allisons
+statesnames_a |> 
+  filter(Name == 'Allison')  |>
+  group_by(Year) |>
+  summarize(sum(Count)) |>
+  rename(Number = `sum(Count)`) |>
+   lm(Number ~ Year, data = _)
 ```
 
 -   Example 2
 
 ```{r dsm-2-2}
-N/A
+# Lab 9, Residuals of Model
+statesnames_a |> 
+  filter(Name == 'Allison')  |>
+  group_by(Year) |>
+  summarize(sum(Count)) |>
+  rename(Number = `sum(Count)`) |>
+   lm(Number ~ Year, data = _) |>
+  broom::augment() |> 
+  ggplot(mapping = aes(y = .resid, x = .fitted)) +
+  geom_point()
+
 ```
 
 ## Revising My Thinking
 
 <!-- How did you revise your thinking throughout the course? How did you revise your thinking on the code examples you have provided in your portfolio? -->
 
-Upon reflection on the first half of this course, I feel like my mindset towards how this class operates combined with my overall general expectation for classes in the future has changed immensely. This stems from the fact that I have never taken a class with this type of grading structure. As a result, when I first entered week one, I felt like I somewhat downplayed what would be expected in the class. I was not really getting down some key dates such as when certain assignments like the pre-week and practice work were due, which lead to me having to rush through the posted coursework on Canvas. For me, it was difficult to find the flow of this course the first couple of weeks, which lead to me feeling behind at times. Going into week 3, I started to have a better understanding of the week to week workload and began organizing my time to allow me the appropriate amount of time to go through the coursework videos and readings, which made me much more prepared and confident with the labs and challenge problems. Because of this change, it allowed me transition from a "catching up" mindset, to a more curious and inquisitive mindset, taking the time to fully understand topics and dive into the curiosity it sparked. I also believe that my start to the course taught me to be more reflective on how ways I can improve. I am really starting to enjoy the format of this class because there is no longer any stress or negative feelings when I get assignments back that I don't get 100% on. Now when I see that I get a "G", my mindset instantly goes to an eagerness of figuring out my mistake and finding way to fix it or better my code. Thus far, every assignment in which I did not fully receive an S on, I made sure to understand my mistake(s) and resubmit a new correct solution with a thoughtful reflection.
+Upon reflection on thiscourse, I feel like my mindset towards how this class operates combined with my overall general expectation for classes in the future has changed immensely. This stems from the fact that I have never taken a class with this type of grading structure. As a result, when I first entered week one, I felt like I somewhat downplayed what would be expected in the class. I was not really getting down some key dates such as when certain assignments like the pre-week and practice work were due, which lead to me having to rush through the posted coursework on Canvas. For me, it was difficult to find the flow of this course the first couple of weeks, which lead to me feeling behind at times. Going into week 3, I started to have a better understanding of the week to week workload and began organizing my time to allow me the appropriate amount of time to go through the coursework videos and readings, which made me much more prepared and confident with the labs and challenge problems. Because of this change, it allowed me transition from a "catching up" mindset, to a more curious and inquisitive mindset, taking the time to fully understand topics and dive into the curiosity it sparked. I also believe that my start to the course taught me to be more reflective on how ways I can improve. I am really starting to enjoy the format of this class because there is no longer any stress or negative feelings when I get assignments back that I don't get 100% on. Now when I see that I get a "G", my mindset instantly goes to an eagerness of figuring out my mistake and finding way to fix it or better my code. Thus far, every assignment in which I did not fully receive an S on, I made sure to understand my mistake(s) and resubmit a new correct solution with a thoughtful reflection.
 
 ## Extending My Thinking
 
