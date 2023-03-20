@@ -3,3 +3,35 @@ title: "Lightening Round Essays"
 format: html
 editor: visual
 ---
+
+If Pablo Nguyen doesn\'t earn an A, then nobody should, because I think every time
+we worked together he showed a massive eagerness to try and learn the material
+as well as being collaborative. I think there was a lot of times throughout the quarter
+where I was lost in how to accomplish a certain task. I think Pablo was able to help me in
+this regard by either guiding me in the right direction, or if we were both collectively stuck
+figuring out potential solutions.
+			
+
+I think the most diﬀicult part of the class was surprisingly completing the practice
+activities. I think this is because I would consider myself a learner by example and it was hard
+to translate the lectures and preview activities we learned to actually applying it to different
+sets of data. I do believe however that because of this struggle it somewhat helped me learn
+the material a bit better and by the time the lab was released I felt prepared to do
+it.
+					
+
+The easiest part of the class was getting myself motivated to do the work. I think
+there was only a few times in which I was unmotivated to actually work in this class. I often found
+surprisingly enjoying the struggle of not figuring out how to do a certain problem and exploring
+solutions (I can not say the same for other courses).
+					
+
+A piece of advice I would give would be to realize that the beginning weeks when first
+learning R is the hardest. I think around Lab 4, I had a decent amount of stress with the
+amount of work. However, if you stick with it and ask questions when your are uncertain about things, I found that it became much easier to grasp new topics and I am now confident in my R capabilities.
+
+				
+			
+		
+
+	
